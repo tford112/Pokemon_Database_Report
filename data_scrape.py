@@ -16,7 +16,7 @@ types = {1: "normal", 2: "fighting", 3: "flying", 4 : "poison", 5: "ground", 6: 
 
 type_list = list(types.values())
 
-
+## function to scrape the basic stats for each pokemon (health, special atk, special def, attack, defense, speed) 
 def base_stat():
     num = 1
     with open("base_stat.txt", "w") as out:
@@ -38,7 +38,7 @@ def base_stat():
     out.close()
     return 
 
-    
+## function scraping the general physical characteristics of each pokemon. 
 def poke_info():
     num = 1 
     with open("pinfo.txt", "w") as out:
@@ -71,7 +71,7 @@ def poke_info():
     out.close()
     return 
 
-
+# helper function to generate all the possible type combinations that a pokemon could have 
 def dual_types():
     finals = [list((perm)) for perm in itertools.permutations(type_list ,2)]
     for mono in type_list[::-1]:        # add the monotypes to the beginning of list 
@@ -85,7 +85,7 @@ def dual_types():
         else: 
             check = [item[1], item[0]]  #check if duplicate--would look like a reverse of types (e..g (rock, ice) is the same as (ice, rock))
             if check not in no_dups:
-                no_dups.append(item)
+               no_dups.append(item)
 
     type_ids = {}                       # assign an id for each combination of type a pokemon can have  
     for key,val in enumerate(no_dups):
@@ -93,29 +93,27 @@ def dual_types():
 
     return type_ids                     # return the dictionary where a unique ID maps to a specific pokemon type (~170 possible type pairings)
 
-# need to write "insert into..." statements for the types  
-# plan: generate all the unique 170 type_ids with associated names 
+## helper function that calls the get_type_weaknesses() function to match weakness per type and if option = True, writes it out to file 
 def get_types(option=False):
-    #all_types = dual_types()
-    all_types = type_list
+    all_types = dual_types()
     match_type_name_id = []   ## to store the type ids and type names. The type names will be stored in a list for easy seach+match in the has_types function 
     weakness = get_type_weakness() 
     with open("types_and_weaknesses.txt", "w") as out: 
         writer = csv.writer(out) 
         for key, val in all_types.items():
             type_str_format = "" 
-            if len(val) == 1: 
-                type_str_format = "'" + val[0] + "'"
+            if len(val) == 1:       ## formatting the string value to include escape quotes for Postgres to store the "ptype_name" value 
+                type_str_format = "'" + val[0] + "'"             
                 match_type_name_id.append([key,[val[0]]])
 
-            if (len(val) == 2): 
+            if (len(val) == 2):     ## formatting dual-types for Postgres 
                 type_str_format = "'" + val[0] + "/" + val[1] + "'" 
                 match_type_name_id.append([key,[val[0], val[1]]])
             if (option == True): 
-                str_res = f"insert into ptype(ptype_id, ptype_name, weak_against_normal, weak_against_fighting, weak_against_flying, weak_against_poison, weak_against_ground, weak_against_rock, weak_against_bug, weak_against_ghost, weak_against_steel, weak_against_fire, weak_against_water, weak_against_grass, weak_against_electric, weak_against_psychic, weak_against_ice, weak_against_dragon, weak_against_dark, weak_against_fairy) values ({key}, {type_str_format}, {weakness[key]});" 
+                str_res = f"insert into ptype(ptype_id, ptype_name, weak_against_normal, weak_against_fighting, weak_against_flying, weak_against_poison, weak_against_ground, weak_against_rock, weak_against_bug, weak_against_ghost, weak_against_steel, weak_against_fire, weak_against_water, weak_against_grass, weak_against_electric, weak_against_psychic, weak_against_ice, weak_against_dragon, weak_against_dark, weak_against_fairy) values ({key}, {type_str_format}, {weakness[key]});"  ## ptype_id = key, ptype_name = type_str_format, and weaknesses are from the function call, get_type_weaknesses()
                 writer.writerow([str_res]) 
         out.close()
-    return match_type_name_id
+    return match_type_name_id   ## regardless whether option is True or False, the list of lists of ptype_ids and ptype_names is returned
 
 
 # now need to get all the 150 pokemon with their poke_ids and match their poke_id with the generated names associated to a type_id 
@@ -180,10 +178,7 @@ def get_type_weakness():
             weak_bool_string += (intermediary + last ) 
         bool_res = eval(weak_bool_string)
         bool_res = re.sub(r'[\(\)]', '', str(bool_res))
-        str_res = f"insert into type_weak_to_attack_type(ptype_id, weak_against_normal, weak_against_fighting, weak_against_flying, weak_against_poison, weak_against_ground,\
-        weak_against_rock, weak_against_bug, weak_against_ghost, weak_against_steel, weak_against_fire, weak_against_water, weak_against_grass, weak_against_electric,\
-        weak_against_psychic, weak_against_ice, weak_against_dragon, weak_against_dark, weak_against_fairy) values ({poke_type_count}, {bool_res});"
-        tot_str_res[poke_type_count] = bool_res
+        tot_str_res[poke_type_count] = bool_res  ## store a specific type combo's string of weaknesses into dictionary 
         poke_type_count += 1
     return tot_str_res 
 
@@ -432,9 +427,8 @@ def main():
 #    part_of_egg_group() 
 #    ailments()
 #    causes_ailment() 
-    habitat()
-    lives_in()
-    print("hi")
+#    habitat()
+#    lives_in()
 
 if __name__ == '__main__':
     main()
